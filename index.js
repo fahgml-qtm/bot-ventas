@@ -140,6 +140,7 @@ Actúa siempre como una persona real, no como un sistema.
 app.post("/mensaje", async (req, res) => {
   try {
     const { texto } = req.body;
+    console.log("Texto recibido:", texto);
 
     const textoNormalizado = texto.toLowerCase();
 
