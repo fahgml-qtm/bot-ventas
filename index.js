@@ -119,6 +119,8 @@ Hay personas que apoyan con 70 como gesto de gratitud, otros con 90 o 120 para q
 
 Nunca fuerces el cierre.
 
+Después de responder dudas normales, intenta cerrar suavemente llevando a elegir método de pago en lugar de seguir extendiendo la conversación.
+
 ---
 
 COMPORTAMIENTO:
@@ -127,6 +129,18 @@ COMPORTAMIENTO:
 - Escucha la intención del usuario.
 - Responde directo a lo que preguntan.
 - Luego, si tiene sentido, guía al apoyo.
+- Después de resolver una duda, evita seguir abriendo conversación innecesariamente.
+- No hagas preguntas abiertas largas.
+- No intentes mantener una conversación infinita.
+- Tu objetivo es responder con claridad y luego dirigir suavemente hacia elegir método de pago.
+- Cuando la duda ya fue resuelta, guía naturalmente a:
+  • Transferencia
+  • Depósito en Oxxo
+- Evita frases como:
+  "¿Quieres que te cuente más?"
+  "¿Te gustaría saber más?"
+  "¿Quieres que te explique?"
+- En su lugar, termina guiando suavemente hacia el método de pago.
 
 ---
 
@@ -144,26 +158,26 @@ app.post("/mensaje", async (req, res) => {
 
     const textoNormalizado = texto.toLowerCase();
 
-// CIERRE DIRECTO: TRANSFERENCIA
-if (
-  textoNormalizado.includes("transferencia") ||
-  textoNormalizado.includes("transferir")
-) {
-  return res.json({
-    respuesta: "Perfecto ❤️\n\nPara transferencia interbancaria este es el número:\n728969000160022558\n\nBanco: SPIN BY OXXO\nA nombre de: JUAN CAMACHO SOTELO\n\nQuedo atenta para recibir tu apoyo. Si tienes algún problema con la transferencia, aquí estoy para ayudarte 🙏"
-  });
-}
+    // CIERRE DIRECTO: TRANSFERENCIA
+    if (
+      textoNormalizado.includes("transferencia") ||
+      textoNormalizado.includes("transferir")
+    ) {
+      return res.json({
+        respuesta: "Perfecto ❤️\n\nPara transferencia interbancaria este es el número:\n728969000160022558\n\nBanco: SPIN BY OXXO\nA nombre de: JUAN CAMACHO SOTELO\n\nQuedo atenta para recibir tu apoyo. Si tienes algún problema con la transferencia, aquí estoy para ayudarte 🙏"
+      });
+    }
 
-// CIERRE DIRECTO: OXXO
-if (
-  textoNormalizado.includes("oxxo") ||
-  textoNormalizado.includes("depósito") ||
-  textoNormalizado.includes("deposito")
-) {
-  return res.json({
-    respuesta: "Perfecto ❤️\n\nPara depósito en Oxxo te comparto los datos enseguida. Si tienes algún problema al momento de pagar, aquí estoy para ayudarte 🙏"
-  });
-}
+    // CIERRE DIRECTO: OXXO
+    if (
+      textoNormalizado.includes("oxxo") ||
+      textoNormalizado.includes("depósito") ||
+      textoNormalizado.includes("deposito")
+    ) {
+      return res.json({
+        respuesta: "Perfecto ❤️\n\nPara depósito en Oxxo te comparto los datos enseguida. Si tienes algún problema al momento de pagar, aquí estoy para ayudarte 🙏"
+      });
+    }
 
     console.log("Mensaje recibido:", texto);
 
