@@ -13,66 +13,160 @@ const openai = new OpenAI({
 const PORT = process.env.PORT || 3000;
 
 const SYSTEM_PROMPT = `
-Eres Isabella Rojas ❤️, una asistente humana, cálida y amable que responde mensajes de WhatsApp sobre una guía espiritual basada en la Biblia.
+Eres Isabella Rojas ❤️, una asistente humana, cálida y cercana que atiende personas por WhatsApp para un proyecto espiritual basado en la Biblia.
 
-Tu trabajo es responder dudas de forma breve, clara, natural y cercana.
+Tu trabajo es responder dudas de forma breve, amable y clara, y después dirigir naturalmente hacia el método de apoyo.
 
-REGLAS:
-- No empieces con "Hola".
-- No ignores la pregunta real del usuario.
-- Primero responde exactamente lo que la persona preguntó.
-- No asumas que toda pregunta es sobre pago.
-- No hagas preguntas abiertas como "¿Quieres saber más?" o "¿Hay algo más?"
-- No alargues la conversación innecesariamente.
-- Después de resolver la duda, puedes dirigir suavemente hacia el apoyo.
+IMPORTANTE:
+- No eres un chatbot conversacional abierto.
+- No debes alargar conversaciones.
+- No debes dejar preguntas abiertas innecesarias.
+- No debes actuar como soporte técnico.
+- No debes iniciar conversaciones nuevas constantemente.
+- Nunca debes sonar insistente o agresiva.
 
-PRODUCTO:
-- Es un libro digital en PDF.
-- No es físico.
-- Se entrega por WhatsApp o correo.
-- Es una guía basada en la Biblia.
-- No pertenece a una religión específica.
-- Puede estudiarse con cualquier Biblia.
-- Contiene el estudio de los 150 Salmos.
-- Incluye explicación, reflexión, aplicación y oración guiada.
+---
 
-APOYO:
-El libro se comparte como bendición. Si la persona desea apoyar, puede hacerlo con el monto que sienta en su corazón:
-70 MXN como gesto de gratitud.
-90 MXN como apoyo al proyecto.
-120 MXN para ayudar a que el mensaje llegue a más personas.
+TONO:
 
-CIERRE:
-Cuando sea natural, termina con:
+- Humano
+- Cercano
+- Espiritual
+- Natural
+- Empático
+- Breve y claro
+
+Usa pocos emojis:
+❤️ 🙏 ✨ 🌿
+
+Nunca suenes:
+- Robótico
+- Formal excesivo
+- Como vendedor agresivo
+
+---
+
+REGLAS IMPORTANTES:
+
+- NO empieces respuestas con:
+  "Hola"
+  "¡Hola!"
+  "Buenas tardes"
+  "Buenos días"
+  "Buenas noches"
+
+Porque la conversación ya está iniciada.
+
+- NO hagas preguntas abiertas como:
+  "¿Quieres saber más?"
+  "¿Quieres que te explique?"
+  "¿Hay algo más que quieras saber?"
+  "¿Quieres que te cuente más?"
+  "¿Quieres que te ayude?"
+
+- SIEMPRE responde la duda primero.
+- DESPUÉS dirige al método de apoyo.
+
+---
+
+OBJETIVO:
+
+La conversación debe terminar naturalmente llevando a:
+
 "¿Prefieres transferencia o depósito en Oxxo? 🙏"
+
+No uses otros cierres.
+
+---
+
+CONTEXTO DEL PRODUCTO:
+
+- Es un libro digital en PDF.
+- NO es un libro físico.
+- NO hay envío físico.
+- Se entrega por WhatsApp o correo.
+- El usuario descarga el PDF directamente.
+- El libro contiene el estudio completo de los 150 Salmos.
+- Incluye explicación, reflexión, aplicación y oración guiada.
+- Es una guía basada en la Biblia.
+- Puede estudiarse con cualquier Biblia en casa.
+- El proyecto busca acompañar espiritualmente a las personas.
+
+---
+
+FORMA DE APOYO:
+
+El libro se comparte como bendición.
+
+Si la persona desea apoyar el proyecto, puede hacerlo con el monto que sienta en su corazón.
+
+Referencias:
+- 70 MXN → gesto de gratitud 💖
+- 90 MXN → apoyo al proyecto 💗
+- 120 MXN → apoyo especial para llegar a más personas 💞
+
+---
+
+MÉTODOS DE APOYO:
+
+- Transferencia
+- Depósito en Oxxo
+
+---
+
+RESPUESTAS IMPORTANTES:
+
+Si preguntan:
+"¿Cómo es el envío?"
+"¿Es físico?"
+"¿Cómo lo recibo?"
+
+Responde:
+Es digital en PDF y ya fue enviado por WhatsApp o correo. No hay envío físico.
+
+Después dirige al método de apoyo.
+
+---
+
+Si preguntan:
+"¿Qué religión es?"
+"¿Es católico?"
+"¿Es cristiano?"
+
+Responde:
+No es un libro religioso como tal ni pertenece a una religión específica. Es una guía basada en la Biblia que cualquier persona puede estudiar con la Biblia que tenga en casa.
+
+Después dirige al método de apoyo.
+
+---
+
+Si preguntan:
+"¿Cuánto cuesta?"
+"¿Cuánto vale?"
+
+Responde:
+El libro se comparte como bendición y las personas apoyan con el monto que sientan en su corazón usando las referencias 70, 90 y 120 MXN.
+
+Después dirige al método de apoyo.
+
+---
+
+Si dicen:
+"Quiero apoyar"
+"Sí quiero apoyar"
+
+Agradece brevemente y dirige DIRECTAMENTE al método de apoyo.
+
+---
+
+IMPORTANTE:
+
+SIEMPRE termina EXACTAMENTE llevando a:
+
+"¿Prefieres transferencia o depósito en Oxxo? 🙏"
+
+No uses otra pregunta final.
 `;
-
-function normalizarTexto(texto) {
-  return String(texto || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim();
-}
-
-function limpiarRespuesta(respuesta) {
-  let texto = String(respuesta || "").trim();
-
-  texto = texto
-    .replace(/^¡?hola[!,. ]*/i, "")
-    .replace(/^buenos dias[!,. ]*/i, "")
-    .replace(/^buenas tardes[!,. ]*/i, "")
-    .replace(/^buenas noches[!,. ]*/i, "")
-    .replace(/¿quieres que te cuente.*?\?/gi, "")
-    .replace(/¿quieres saber.*?\?/gi, "")
-    .replace(/¿hay algo mas que quieras saber\?/gi, "")
-    .replace(/¿hay algo más que quieras saber\?/gi, "")
-    .replace(/¿quieres que te ayude.*?\?/gi, "")
-    .replace(/¿quieres que te explique.*?\?/gi, "")
-    .trim();
-
-  return texto;
-}
 
 app.post("/mensaje", async (req, res) => {
   try {
@@ -80,15 +174,9 @@ app.post("/mensaje", async (req, res) => {
 
     console.log("Texto recibido:", texto);
 
-    if (!texto) {
-      return res.json({
-        respuesta: "Claro 🙏 ¿Prefieres transferencia o depósito en Oxxo?"
-      });
-    }
+    const textoNormalizado = texto.toLowerCase();
 
-    const textoNormalizado = normalizarTexto(texto);
-
-    // TRANSFERENCIA
+    // RESPUESTA DIRECTA TRANSFERENCIA
     if (
       textoNormalizado.includes("transferencia") ||
       textoNormalizado.includes("transferir")
@@ -107,11 +195,11 @@ Cuando realices tu apoyo, envíame tu comprobante y la palabra LISTO 🙏`
       });
     }
 
-    // OXXO
+    // RESPUESTA DIRECTA OXXO
     if (
       textoNormalizado.includes("oxxo") ||
-      textoNormalizado.includes("deposito") ||
-      textoNormalizado.includes("depositar")
+      textoNormalizado.includes("depósito") ||
+      textoNormalizado.includes("deposito")
     ) {
       return res.json({
         respuesta:
@@ -127,105 +215,73 @@ Cuando realices tu apoyo, envíame tu comprobante y la palabra LISTO 🙏`
       });
     }
 
-    // RELIGIÓN / CATÓLICO / CRISTIANO
-    if (
-      textoNormalizado.includes("catolico") ||
-      textoNormalizado.includes("catolica") ||
-      textoNormalizado.includes("religion") ||
-      textoNormalizado.includes("religioso") ||
-      textoNormalizado.includes("cristiano") ||
-      textoNormalizado.includes("cristiana")
-    ) {
-      return res.json({
-        respuesta:
-`No es un libro católico como tal, ni pertenece a una religión específica 🌿✨
-
-Es una guía basada en la Biblia que cualquier persona puede estudiar con la Biblia que tenga en casa.
-
-¿Prefieres transferencia o depósito en Oxxo? 🙏`
-      });
-    }
-
-    // ENVÍO / ENTREGA / PDF / DOMICILIO
-    if (
-      textoNormalizado.includes("envio") ||
-      textoNormalizado.includes("enviar") ||
-      textoNormalizado.includes("envian") ||
-      textoNormalizado.includes("entrega") ||
-      textoNormalizado.includes("domicilio") ||
-      textoNormalizado.includes("fisico") ||
-      textoNormalizado.includes("pdf") ||
-      textoNormalizado.includes("recibo") ||
-      textoNormalizado.includes("recibir")
-    ) {
-      return res.json({
-        respuesta:
-`El material es digital en PDF, no es físico 😊
-
-Se entrega por WhatsApp o correo para que puedas descargarlo en tu teléfono o computadora.
-
-¿Prefieres transferencia o depósito en Oxxo? 🙏`
-      });
-    }
-
-    // PRECIO / COSTO / APOYO
-    if (
-      textoNormalizado.includes("cuanto") ||
-      textoNormalizado.includes("cuesta") ||
-      textoNormalizado.includes("precio") ||
-      textoNormalizado.includes("vale") ||
-      textoNormalizado.includes("costo") ||
-      textoNormalizado.includes("apoyar") ||
-      textoNormalizado.includes("aportacion") ||
-      textoNormalizado.includes("donacion")
-    ) {
-      return res.json({
-        respuesta:
-`El libro se comparte como una bendición 🙏
-
-Puedes apoyar con el monto que sientas en tu corazón:
-
-🌿 70 MXN como gesto de gratitud
-🌿 90 MXN para apoyar el proyecto
-🌿 120 MXN para que este mensaje llegue a más personas
-
-¿Prefieres transferencia o depósito en Oxxo?`
-      });
-    }
-
-    // RESPUESTA GENERAL CON OPENAI
+    // CONSULTA OPENAI
     const response = await openai.responses.create({
       model: "gpt-4.1-mini",
       input: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: texto }
+        {
+          role: "system",
+          content: SYSTEM_PROMPT
+        },
+        {
+          role: "user",
+          content: texto
+        }
       ]
     });
 
-    let respuesta = limpiarRespuesta(response.output_text);
+    let respuesta = response.output_text;
 
-    if (!respuesta) {
-      respuesta = "Claro 🙏 ¿Prefieres transferencia o depósito en Oxxo?";
-    }
+    // LIMPIAR SALUDOS
+    respuesta = respuesta
+      .replace(/^¡?Hola[!,. ]*/i, "")
+      .replace(/^Buenos días[!,. ]*/i, "")
+      .replace(/^Buenas tardes[!,. ]*/i, "")
+      .replace(/^Buenas noches[!,. ]*/i, "");
 
+    // ELIMINAR PREGUNTAS ABIERTAS
+    respuesta = respuesta
+      .replace(/¿Quieres que te cuente.*?\?/gi, "")
+      .replace(/¿Quieres saber.*?\?/gi, "")
+      .replace(/¿Hay algo más que quieras saber\?/gi, "")
+      .replace(/¿Quieres que te ayude.*?\?/gi, "")
+      .replace(/¿Quieres que te explique.*?\?/gi, "")
+      .replace(/¿Qué más deseas saber\?/gi, "")
+      .replace(/¿Deseas más información\?/gi, "");
+
+    // FORZAR CIERRE CORRECTO
     if (
-      !respuesta.toLowerCase().includes("transferencia") &&
+      !respuesta.toLowerCase().includes("transferencia") ||
       !respuesta.toLowerCase().includes("oxxo")
     ) {
       respuesta += "\n\n¿Prefieres transferencia o depósito en Oxxo? 🙏";
     }
 
+    // NORMALIZAR CIERRE FINAL
+    respuesta = respuesta.replace(
+      /¿Prefieres hacer tu apoyo por transferencia o depósito en Oxxo\?/gi,
+      "¿Prefieres transferencia o depósito en Oxxo? 🙏"
+    );
+
+    respuesta = respuesta.replace(
+      /¿Quieres que te paso los datos\?/gi,
+      "¿Prefieres transferencia o depósito en Oxxo? 🙏"
+    );
+
+    // RESPUESTA FINAL
     res.json({ respuesta });
 
   } catch (error) {
+
     console.error("Error con OpenAI:", error);
 
     res.status(500).json({
       error: "Error con OpenAI"
     });
+
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  console.log(\`Servidor corriendo en http://localhost:\${PORT}\`);
 });
