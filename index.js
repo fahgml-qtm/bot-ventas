@@ -13,28 +13,51 @@ const openai = new OpenAI({
 const PORT = process.env.PORT || 8080;
 
 const SYSTEM_PROMPT = `
-Eres Isabella Rojas ❤️, una asistente humana, cálida y cercana que responde dudas por WhatsApp sobre el libro digital "Cuando Dios Habla".
+Eres Isabella Rojas ❤️, una asistente humana, cálida, espiritual y cercana que responde dudas por WhatsApp sobre el libro digital "Cuando Dios Habla".
 
-Tu única tarea es responder la duda exacta del usuario de forma breve, amable, espiritual y clara.
+Tu trabajo es responder dudas de forma NATURAL, BREVE y HUMANA, como si fueras una persona real atendiendo con cariño.
+
+IMPORTANTE:
+- Nunca suenes robótica.
+- Nunca respondas exactamente igual cada vez.
+- Varía ligeramente las palabras y estructura.
+- Mantén respuestas cálidas y naturales.
+- No escribas demasiado.
+- Responde máximo en 1 o 2 párrafos cortos.
 
 REGLAS:
 - NO saludes.
-- NO digas "Hola".
-- NO hagas preguntas abiertas.
-- NO cierres con "¿quieres saber más?", "¿te cuento más?", "¿te interesa?", "¿te gustaría?", "¿hay algo más?", "¿te ayudo con algo más?".
-- NO vendas agresivamente.
+- NO uses "Hola".
+- NO hagas múltiples preguntas.
+- NO hagas preguntas abiertas innecesarias.
+- NO digas:
+  - "¿Quieres saber más?"
+  - "¿Te interesa?"
+  - "¿Te gustaría?"
+  - "¿Te ayudo en algo más?"
+  - "¿Quieres que te cuente?"
+- NO seas agresiva vendiendo.
+- NO presiones.
 - NO inventes información.
-- Responde máximo en 2 párrafos.
+- NO menciones correo electrónico.
+- NO digas que el libro es físico.
 
-INFORMACIÓN:
-- Es un libro digital en PDF.
-- No es físico.
-- Ya fue enviado al usuario por WhatsApp.
-- Está más arriba en esta misma conversación, en el primer mensaje donde se compartió el PDF.
-- No se envía por correo electrónico.
-- Está basado en la Biblia.
-- No es católico ni de una religión específica.
-- Puede estudiarlo cualquier persona con la Biblia que tenga en casa.
+INFORMACIÓN REAL:
+- El libro es DIGITAL en PDF.
+- El libro NO es físico.
+- El PDF YA fue enviado anteriormente por WhatsApp.
+- El usuario lo puede encontrar más arriba en esta misma conversación.
+- El libro está basado en la Biblia.
+- No pertenece a una religión específica.
+- No es exclusivamente católico.
+- Puede estudiarse con cualquier Biblia.
+
+OBJETIVO:
+Después de resolver la duda de forma amable y humana, dirige suavemente a la persona al apoyo del proyecto espiritual mediante:
+- transferencia bancaria
+- depósito en Oxxo
+
+Haz que el cierre se sienta natural, amable y espiritual, nunca como presión de venta.
 `;
 
 function normalizarTexto(texto) {
@@ -43,6 +66,10 @@ function normalizarTexto(texto) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .trim();
+}
+
+function elegirAleatoria(opciones) {
+  return opciones[Math.floor(Math.random() * opciones.length)];
 }
 
 function limpiarRespuesta(texto) {
@@ -66,9 +93,21 @@ function limpiarRespuesta(texto) {
 }
 
 function cierrePago() {
-  return `💌 Puedes apoyar este proyecto espiritual por transferencia bancaria o depósito en Oxxo ✨
+  const cierres = [
+    `💌 Puedes apoyar este proyecto espiritual por transferencia bancaria o depósito en Oxxo ✨
 
-¿Cuál método prefieres? 🙏`;
+¿Cuál método prefieres? 🙏`,
+
+    `💌 Si deseas apoyar este proyecto espiritual, puedes hacerlo por transferencia bancaria o depósito en Oxxo ✨
+
+¿Qué método prefieres? 🙏`,
+
+    `💌 Para apoyar este proyecto espiritual puedes elegir transferencia bancaria o depósito en Oxxo ✨
+
+¿Cuál opción prefieres? 🙏`,
+  ];
+
+  return elegirAleatoria(cierres);
 }
 
 function agregarCierre(texto) {
@@ -92,9 +131,21 @@ function respuestaDirecta(textoNormalizado) {
     textoNormalizado.includes("cristiano") ||
     textoNormalizado.includes("cristiana")
   ) {
-    return agregarCierre(`No es un libro católico como tal, ni pertenece a una religión específica 🌿
+    const respuestasReligion = [
+      `No es un libro católico como tal, ni pertenece a una religión específica 🌿
 
-Es una guía basada en la Biblia que puedes estudiar con cualquier Biblia que tengas en casa.`);
+Es una guía basada en la Biblia que puedes estudiar con cualquier Biblia que tengas en casa.`,
+
+      `No pertenece a una religión en específico 😊
+
+Es un material basado en la Biblia, pensado para acompañarte en tu vida espiritual de una forma sencilla y cercana.`,
+
+      `Es una guía bíblica, no un libro religioso de una denominación específica 🌿
+
+Puedes estudiarlo con la Biblia que tengas en casa, sin importar tu tradición religiosa.`,
+    ];
+
+    return agregarCierre(elegirAleatoria(respuestasReligion));
   }
 
   if (
@@ -107,11 +158,29 @@ Es una guía basada en la Biblia que puedes estudiar con cualquier Biblia que te
     textoNormalizado.includes("descargar") ||
     textoNormalizado.includes("recibir") ||
     textoNormalizado.includes("recibo") ||
-    textoNormalizado.includes("archivo")
+    textoNormalizado.includes("archivo") ||
+    textoNormalizado.includes("entrego") ||
+    textoNormalizado.includes("llega")
   ) {
-    return agregarCierre(`El libro digital ya fue enviado 😊
+    const respuestasEnvio = [
+      `El libro es completamente digital 😊
 
-Lo encuentras más arriba en esta misma conversación de WhatsApp, en el primer mensaje donde te compartimos el PDF. No hay envío físico ni envío por correo; solo necesitas descargarlo desde aquí mismo para leerlo en tu celular o computadora 🌿`);
+El PDF ya fue enviado anteriormente aquí mismo en WhatsApp, así que solo necesitas abrirlo o descargarlo desde esta conversación 🌿`,
+
+      `No es un libro físico 🙏
+
+Es un material digital en PDF que ya te compartimos anteriormente en esta misma conversación de WhatsApp para que puedas leerlo cuando quieras ✨`,
+
+      `El material ya fue enviado por WhatsApp 😊
+
+Lo encuentras más arriba en esta conversación. Solo necesitas descargar el PDF en tu celular o computadora 🌿`,
+
+      `La entrega es digital 😊
+
+El PDF ya está enviado más arriba en este mismo chat de WhatsApp. No llega nada físico ni se manda por correo; solo debes descargarlo desde aquí mismo 🌿`,
+    ];
+
+    return agregarCierre(elegirAleatoria(respuestasEnvio));
   }
 
   if (
@@ -124,11 +193,24 @@ Lo encuentras más arriba en esta misma conversación de WhatsApp, en el primer 
     textoNormalizado.includes("apoyar") ||
     textoNormalizado.includes("aportacion") ||
     textoNormalizado.includes("donacion") ||
-    textoNormalizado.includes("pagar")
+    textoNormalizado.includes("pagar") ||
+    textoNormalizado.includes("pago")
   ) {
-    return agregarCierre(`El libro se comparte como una bendición 🙏
+    const respuestasPago = [
+      `El libro se comparte como una bendición 🙏
 
-Si nace en tu corazón apoyar este proyecto espiritual, puedes hacerlo con el monto que sientas correcto.`);
+Si nace en tu corazón apoyar este proyecto espiritual, puedes hacerlo con el monto que sientas correcto.`,
+
+      `El material ya fue compartido con mucho cariño 😊
+
+Si deseas apoyar el proyecto, puedes hacerlo con una aportación voluntaria desde tu corazón.`,
+
+      `Este proyecto se sostiene con el apoyo de las personas que reciben el material 🙏
+
+Puedes aportar el monto que sientas correcto para seguir compartiendo este mensaje.`,
+    ];
+
+    return agregarCierre(elegirAleatoria(respuestasPago));
   }
 
   return null;
@@ -158,7 +240,7 @@ app.post("/mensaje", async (req, res) => {
 
     const response = await openai.responses.create({
       model: "gpt-4.1-mini",
-      temperature: 0.1,
+      temperature: 0.4,
       input: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: texto },
