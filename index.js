@@ -4,7 +4,6 @@ const express = require("express");
 const OpenAI = require("openai");
 
 const app = express();
-
 app.use(express.json());
 
 const openai = new OpenAI({
@@ -14,44 +13,30 @@ const openai = new OpenAI({
 const PORT = process.env.PORT || 3000;
 
 const SYSTEM_PROMPT = `
-Eres Isabella Rojas ❤️, una asistente humana, amable y cercana que responde dudas por WhatsApp sobre el libro digital "Cuando Dios Habla".
+Eres Isabella Rojas ❤️, una asistente humana, cálida y cercana que responde dudas por WhatsApp sobre el libro digital "Cuando Dios Habla".
 
-Tu trabajo es:
-1. Responder la duda exacta del usuario.
-2. Sonar cálida, espiritual y humana.
-3. Mantener respuestas cortas.
-4. Guiar suavemente al apoyo del proyecto.
+Tu tarea:
+- Responder la duda exacta del usuario.
+- Ser breve, amable, espiritual y clara.
+- No abrir conversación innecesaria.
+- No saludar.
+- No decir "Hola".
+- No hacer preguntas abiertas.
+- No decir "¿quieres saber más?", "¿te cuento más?", "¿hay algo más?", "¿te ayudo con algo más?".
+- No inventar información.
+- No sonar agresiva.
+- No dar vueltas.
 
-REGLAS IMPORTANTES:
-- Nunca digas que eres IA.
-- Nunca hables como robot.
-- Nunca hagas preguntas abiertas como:
-  - "¿Quieres saber más?"
-  - "¿Te cuento más?"
-  - "¿Hay algo más?"
-- Nunca vendas agresivamente.
-- No des demasiada información.
-- Responde solamente lo necesario.
-- Máximo 2 párrafos.
-- Sonar natural y amorosa.
-- No uses respuestas largas.
-
-INFORMACIÓN DEL PROYECTO:
-- Es un libro digital en PDF.
+Información:
+- El libro es digital en PDF.
+- No es físico.
+- Se entrega por WhatsApp o correo.
 - Está basado en la Biblia.
-- No pertenece a una religión específica.
-- No es exclusivamente católico.
-- Puede estudiarse con cualquier Biblia.
-- Se entrega digitalmente por WhatsApp o correo.
-- El proyecto busca fortalecer la espiritualidad y acercar a las personas a Dios.
+- No es católico ni de una religión específica.
+- Puede estudiarlo cualquier persona con la Biblia que tenga en casa.
+- El apoyo puede hacerse por transferencia o depósito en Oxxo.
 
-CIERRE OBLIGATORIO:
-Después de responder, SIEMPRE termina invitando amablemente al apoyo del proyecto mencionando:
-- transferencia
-- depósito en Oxxo
-- preguntar cuál método prefieren
-
-Hazlo de forma cálida y natural.
+Responde máximo en 2 párrafos.
 `;
 
 function normalizarTexto(texto) {
@@ -63,88 +48,87 @@ function normalizarTexto(texto) {
 }
 
 function limpiarRespuesta(respuesta) {
-
   let texto = String(respuesta || "").trim();
 
   texto = texto
-    .replace(/^hola[!,. ]*/i, "")
+    .replace(/^¡?hola[!,. ]*/i, "")
+    .replace(/^gracias por preguntar[!,. 😊🙏]*/i, "")
     .replace(/^buenos dias[!,. ]*/i, "")
     .replace(/^buenas tardes[!,. ]*/i, "")
     .replace(/^buenas noches[!,. ]*/i, "")
-    .replace(/¿quieres saber más\?/gi, "")
-    .replace(/¿quieres saber mas\?/gi, "")
-    .replace(/¿te cuento más\?/gi, "")
-    .replace(/¿te cuento mas\?/gi, "")
+    .replace(/¿quieres que te cuente.*?\?/gi, "")
+    .replace(/¿quieres saber.*?\?/gi, "")
+    .replace(/¿te cuento.*?\?/gi, "")
     .replace(/¿hay algo más.*?\?/gi, "")
     .replace(/¿hay algo mas.*?\?/gi, "")
+    .replace(/¿te ayudo con algo más.*?\?/gi, "")
+    .replace(/¿te ayudo con algo mas.*?\?/gi, "")
+    .replace(/¿quieres que te ayude.*?\?/gi, "")
     .trim();
 
   return texto;
 }
 
+function cierrePago() {
+  return `Si deseas apoyar el proyecto, puedes hacerlo por transferencia bancaria o depósito en Oxxo.
+
+¿Cuál método prefieres? 🙏`;
+}
+
 function agregarCierre(respuesta) {
+  const limpia = limpiarRespuesta(respuesta);
 
-  return `${respuesta}
+  return `${limpia}
 
-🙏 Si deseas apoyar este proyecto, puedes hacerlo por transferencia bancaria o depósito en Oxxo.
-
-¿Cuál método prefieres? ✨`;
+${cierrePago()}`.trim();
 }
 
 function respuestaDirecta(textoNormalizado) {
-
-  // RELIGIÓN
   if (
     textoNormalizado.includes("catolico") ||
     textoNormalizado.includes("catolica") ||
     textoNormalizado.includes("religion") ||
     textoNormalizado.includes("religioso") ||
-    textoNormalizado.includes("cristiano")
+    textoNormalizado.includes("cristiano") ||
+    textoNormalizado.includes("cristiana")
   ) {
+    return agregarCierre(`No es un libro católico como tal, ni pertenece a una religión específica 🌿
 
-    return agregarCierre(
-`No, no es un libro católico como tal 🌿
-
-Es una guía basada en la Biblia que puedes estudiar con cualquier Biblia que tengas en casa, sin importar tu creencia.
-
-Está pensado para acompañar y fortalecer la espiritualidad de forma sencilla y amorosa ❤️`
-    );
+Es una guía basada en la Biblia que puedes estudiar con cualquier Biblia que tengas en casa.`);
   }
 
-  // PDF / ENTREGA
   if (
+    textoNormalizado.includes("envio") ||
+    textoNormalizado.includes("enviar") ||
+    textoNormalizado.includes("envian") ||
+    textoNormalizado.includes("entrega") ||
+    textoNormalizado.includes("domicilio") ||
+    textoNormalizado.includes("fisico") ||
     textoNormalizado.includes("pdf") ||
     textoNormalizado.includes("digital") ||
-    textoNormalizado.includes("fisico") ||
-    textoNormalizado.includes("envio") ||
-    textoNormalizado.includes("entrega") ||
-    textoNormalizado.includes("correo") ||
-    textoNormalizado.includes("whatsapp")
+    textoNormalizado.includes("descargar") ||
+    textoNormalizado.includes("recibir")
   ) {
+    return agregarCierre(`El libro es digital en PDF, no es físico 😊
 
-    return agregarCierre(
-`El material es completamente digital en PDF 😊
-
-Se entrega por WhatsApp o correo para que puedas leerlo fácilmente desde tu celular o computadora ✨`
-    );
+Se entrega por WhatsApp o correo para que puedas descargarlo y leerlo desde tu celular o computadora.`);
   }
 
-  // PRECIO / APOYO
   if (
-    textoNormalizado.includes("precio") ||
-    textoNormalizado.includes("cuanto cuesta") ||
     textoNormalizado.includes("cuanto") ||
-    textoNormalizado.includes("costo") ||
+    textoNormalizado.includes("cuesta") ||
+    textoNormalizado.includes("precio") ||
     textoNormalizado.includes("vale") ||
+    textoNormalizado.includes("costo") ||
     textoNormalizado.includes("apoyo") ||
-    textoNormalizado.includes("donacion")
+    textoNormalizado.includes("apoyar") ||
+    textoNormalizado.includes("aportacion") ||
+    textoNormalizado.includes("donacion") ||
+    textoNormalizado.includes("pagar")
   ) {
+    return agregarCierre(`El libro se comparte como una bendición 🙏
 
-    return agregarCierre(
-`El proyecto se comparte como una bendición 🙏
-
-Si nace en tu corazón apoyar este trabajo espiritual, puedes hacerlo con el monto que sientas correcto ✨`
-    );
+Si nace en tu corazón apoyar este proyecto espiritual, puedes hacerlo con el monto que sientas correcto.`);
   }
 
   return null;
@@ -155,72 +139,47 @@ app.get("/", (req, res) => {
 });
 
 app.post("/mensaje", async (req, res) => {
-
   try {
-
-    const texto =
-      req.body.texto ||
-      req.body.mensaje ||
-      "";
+    const texto = req.body.texto || req.body.mensaje || "";
 
     console.log("Texto recibido:", texto);
 
     if (!texto) {
-
       return res.json({
-        respuesta: agregarCierre(
-          "Gracias por escribir 😊"
-        )
+        respuesta: cierrePago()
       });
     }
 
     const textoNormalizado = normalizarTexto(texto);
 
-    // RESPUESTAS DIRECTAS
     const directa = respuestaDirecta(textoNormalizado);
-
     if (directa) {
-
-      return res.json({
-        respuesta: directa
-      });
+      console.log("Respuesta directa:", directa);
+      return res.json({ respuesta: directa });
     }
 
-    // OPENAI
     const response = await openai.responses.create({
       model: "gpt-4.1-mini",
+      temperature: 0.2,
       input: [
-        {
-          role: "system",
-          content: SYSTEM_PROMPT
-        },
-        {
-          role: "user",
-          content: texto
-        }
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: texto }
       ]
     });
 
     let respuesta = response.output_text || "";
 
-    respuesta = limpiarRespuesta(respuesta);
-
     respuesta = agregarCierre(respuesta);
 
     console.log("Respuesta enviada:", respuesta);
 
-    return res.json({
-      respuesta
-    });
+    return res.json({ respuesta });
 
   } catch (error) {
-
-    console.error("ERROR:", error);
+    console.error("Error en /mensaje:", error);
 
     return res.json({
-      respuesta: agregarCierre(
-        "Gracias por escribir 😊"
-      )
+      respuesta: cierrePago()
     });
   }
 });
