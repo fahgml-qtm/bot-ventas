@@ -15,28 +15,28 @@ const PORT = process.env.PORT || 3000;
 const SYSTEM_PROMPT = `
 Eres Isabella Rojas ❤️, una asistente humana, cálida y cercana que responde dudas por WhatsApp sobre el libro digital "Cuando Dios Habla".
 
-Tu tarea:
-- Responder la duda exacta del usuario.
-- Ser breve, amable, espiritual y clara.
-- No abrir conversación innecesaria.
-- No saludar.
-- No decir "Hola".
-- No hacer preguntas abiertas.
-- No decir "¿quieres saber más?", "¿te cuento más?", "¿hay algo más?", "¿te ayudo con algo más?".
-- No inventar información.
-- No sonar agresiva.
-- No dar vueltas.
+Tu única tarea es responder la duda exacta del usuario de forma breve, amable, espiritual y clara.
 
-Información:
-- El libro es digital en PDF.
+REGLAS:
+- NO saludes.
+- NO digas "Hola".
+- NO agregues cierres.
+- NO hagas preguntas.
+- NO invites a continuar la conversación.
+- NO digas "¿quieres saber más?", "¿te cuento más?", "¿hay algo más?", "¿te parece?", "¿quieres que te explique?".
+- NO vendas agresivamente.
+- NO inventes información.
+- Solo responde la duda de forma amable y breve.
+- Máximo 2 párrafos.
+
+INFORMACIÓN:
+- Es un libro digital en PDF.
 - No es físico.
 - Se entrega por WhatsApp o correo.
 - Está basado en la Biblia.
 - No es católico ni de una religión específica.
 - Puede estudiarlo cualquier persona con la Biblia que tenga en casa.
-- El apoyo puede hacerse por transferencia o depósito en Oxxo.
-
-Responde máximo en 2 párrafos.
+- El proyecto busca fortalecer la espiritualidad y acercar a las personas a Dios.
 `;
 
 function normalizarTexto(texto) {
@@ -50,27 +50,40 @@ function normalizarTexto(texto) {
 function limpiarRespuesta(respuesta) {
   let texto = String(respuesta || "").trim();
 
+  const bloqueos = [
+    /^¡?hola[!,. ]*/gi,
+    /^hola😊[!,. ]*/gi,
+    /^hola 😊[!,. ]*/gi,
+    /^gracias por preguntar[!,. 😊🙏]*/gi,
+    /^buenos dias[!,. ]*/gi,
+    /^buenas tardes[!,. ]*/gi,
+    /^buenas noches[!,. ]*/gi,
+
+    /¿quieres.*?\?/gi,
+    /¿te cuento.*?\?/gi,
+    /¿hay algo más.*?\?/gi,
+    /¿hay algo mas.*?\?/gi,
+    /¿te ayudo.*?\?/gi,
+    /¿te parece.*?\?/gi,
+    /¿prefieres.*?\?/gi,
+    /¿puedo ayudarte.*?\?/gi,
+    /¿quieres que.*?\?/gi,
+    /¿te explico.*?\?/gi
+  ];
+
+  bloqueos.forEach(regex => {
+    texto = texto.replace(regex, "");
+  });
+
   texto = texto
-    .replace(/^¡?hola[!,. ]*/i, "")
-    .replace(/^gracias por preguntar[!,. 😊🙏]*/i, "")
-    .replace(/^buenos dias[!,. ]*/i, "")
-    .replace(/^buenas tardes[!,. ]*/i, "")
-    .replace(/^buenas noches[!,. ]*/i, "")
-    .replace(/¿quieres que te cuente.*?\?/gi, "")
-    .replace(/¿quieres saber.*?\?/gi, "")
-    .replace(/¿te cuento.*?\?/gi, "")
-    .replace(/¿hay algo más.*?\?/gi, "")
-    .replace(/¿hay algo mas.*?\?/gi, "")
-    .replace(/¿te ayudo con algo más.*?\?/gi, "")
-    .replace(/¿te ayudo con algo mas.*?\?/gi, "")
-    .replace(/¿quieres que te ayude.*?\?/gi, "")
+    .replace(/\n{3,}/g, "\n\n")
     .trim();
 
   return texto;
 }
 
 function cierrePago() {
-  return `Si deseas apoyar el proyecto, puedes hacerlo por transferencia bancaria o depósito en Oxxo.
+  return `💌 Puedes apoyar este proyecto espiritual por transferencia bancaria o depósito en Oxxo ✨
 
 ¿Cuál método prefieres? 🙏`;
 }
@@ -78,9 +91,11 @@ function cierrePago() {
 function agregarCierre(respuesta) {
   const limpia = limpiarRespuesta(respuesta);
 
+  if (!limpia) return cierrePago();
+
   return `${limpia}
 
-${cierrePago()}`.trim();
+${cierrePago()}`;
 }
 
 function respuestaDirecta(textoNormalizado) {
@@ -145,14 +160,13 @@ app.post("/mensaje", async (req, res) => {
     console.log("Texto recibido:", texto);
 
     if (!texto) {
-      return res.json({
-        respuesta: cierrePago()
-      });
+      return res.json({ respuesta: cierrePago() });
     }
 
     const textoNormalizado = normalizarTexto(texto);
 
     const directa = respuestaDirecta(textoNormalizado);
+
     if (directa) {
       console.log("Respuesta directa:", directa);
       return res.json({ respuesta: directa });
@@ -160,27 +174,24 @@ app.post("/mensaje", async (req, res) => {
 
     const response = await openai.responses.create({
       model: "gpt-4.1-mini",
-      temperature: 0.2,
+      temperature: 0.1,
       input: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: texto }
       ]
     });
 
-    let respuesta = response.output_text || "";
+    const respuestaIA = response.output_text || "";
+    const respuestaFinal = agregarCierre(respuestaIA);
 
-    respuesta = agregarCierre(respuesta);
+    console.log("Respuesta enviada:", respuestaFinal);
 
-    console.log("Respuesta enviada:", respuesta);
-
-    return res.json({ respuesta });
+    return res.json({ respuesta: respuestaFinal });
 
   } catch (error) {
     console.error("Error en /mensaje:", error);
 
-    return res.json({
-      respuesta: cierrePago()
-    });
+    return res.json({ respuesta: cierrePago() });
   }
 });
 
