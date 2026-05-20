@@ -51,6 +51,10 @@ INFORMACIÓN REAL:
 - No pertenece a una religión específica.
 - No es exclusivamente católico.
 - Puede estudiarse con cualquier Biblia.
+- Las referencias de apoyo son:
+  - 70 MXN como gesto de gratitud
+  - 90 MXN para apoyar el proyecto
+  - 120 MXN para que este mensaje llegue a más personas
 
 OBJETIVO:
 Después de resolver la duda de forma amable y humana, dirige suavemente a la persona al apoyo del proyecto espiritual mediante:
@@ -199,15 +203,24 @@ El PDF ya está enviado más arriba en este mismo chat de WhatsApp. No llega nad
     const respuestasPago = [
       `El libro se comparte como una bendición 🙏
 
-Si nace en tu corazón apoyar este proyecto espiritual, puedes hacerlo con el monto que sientas correcto.`,
+Si nace en tu corazón apoyar este proyecto espiritual, las referencias son:
+🌿 70 MXN como gesto de gratitud
+🌿 90 MXN para apoyar el proyecto
+🌿 120 MXN para que este mensaje llegue a más personas`,
 
       `El material ya fue compartido con mucho cariño 😊
 
-Si deseas apoyar el proyecto, puedes hacerlo con una aportación voluntaria desde tu corazón.`,
+Para apoyar el proyecto, puedes elegir una de estas referencias:
+🌿 70 MXN como gesto de gratitud
+🌿 90 MXN para apoyar el proyecto
+🌿 120 MXN para ayudar a que llegue a más personas`,
 
       `Este proyecto se sostiene con el apoyo de las personas que reciben el material 🙏
 
-Puedes aportar el monto que sientas correcto para seguir compartiendo este mensaje.`,
+Puedes apoyar con:
+🌿 70 MXN como gesto de gratitud
+🌿 90 MXN para apoyar directamente el proyecto
+🌿 120 MXN para que este mensaje llegue a más personas`,
     ];
 
     return agregarCierre(elegirAleatoria(respuestasPago));
