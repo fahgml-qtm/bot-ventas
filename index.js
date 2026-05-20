@@ -29,8 +29,9 @@ REGLAS:
 INFORMACIÓN:
 - Es un libro digital en PDF.
 - No es físico.
-- Se entrega por WhatsApp o correo.
-- Ya fue enviado al usuario.
+- Ya fue enviado al usuario por WhatsApp.
+- Está más arriba en esta misma conversación, en el primer mensaje donde se compartió el PDF.
+- No se envía por correo electrónico.
 - Está basado en la Biblia.
 - No es católico ni de una religión específica.
 - Puede estudiarlo cualquier persona con la Biblia que tenga en casa.
@@ -83,8 +84,6 @@ ${cierrePago()}`;
 }
 
 function respuestaDirecta(textoNormalizado) {
-
-  // RELIGIÓN / CATÓLICO
   if (
     textoNormalizado.includes("catolico") ||
     textoNormalizado.includes("catolica") ||
@@ -98,7 +97,6 @@ function respuestaDirecta(textoNormalizado) {
 Es una guía basada en la Biblia que puedes estudiar con cualquier Biblia que tengas en casa.`);
   }
 
-  // ENVÍO / PDF / DESCARGA
   if (
     textoNormalizado.includes("envio") ||
     textoNormalizado.includes("enviar") ||
@@ -107,14 +105,15 @@ Es una guía basada en la Biblia que puedes estudiar con cualquier Biblia que te
     textoNormalizado.includes("pdf") ||
     textoNormalizado.includes("digital") ||
     textoNormalizado.includes("descargar") ||
-    textoNormalizado.includes("recibir")
+    textoNormalizado.includes("recibir") ||
+    textoNormalizado.includes("recibo") ||
+    textoNormalizado.includes("archivo")
   ) {
     return agregarCierre(`El libro digital ya fue enviado 😊
 
-Solo necesitas descargarlo desde el enlace que te compartimos. No hay envío físico, todo se entrega en PDF para que puedas leerlo desde tu celular o computadora 🌿`);
+Lo encuentras más arriba en esta misma conversación de WhatsApp, en el primer mensaje donde te compartimos el PDF. No hay envío físico ni envío por correo; solo necesitas descargarlo desde aquí mismo para leerlo en tu celular o computadora 🌿`);
   }
 
-  // PRECIO / APOYO / PAGO
   if (
     textoNormalizado.includes("cuanto") ||
     textoNormalizado.includes("cuesta") ||
@@ -141,67 +140,41 @@ app.get("/", (req, res) => {
 
 app.post("/mensaje", async (req, res) => {
   try {
-
-    const texto =
-      req.body.texto ||
-      req.body.mensaje ||
-      req.body.message ||
-      "";
+    const texto = req.body.texto || req.body.mensaje || req.body.message || "";
 
     console.log("Texto recibido:", texto);
 
     if (!texto) {
-      return res.json({
-        respuesta: cierrePago(),
-      });
+      return res.json({ respuesta: cierrePago() });
     }
 
     const textoNormalizado = normalizarTexto(texto);
-
-    // RESPUESTAS DIRECTAS
     const directa = respuestaDirecta(textoNormalizado);
 
     if (directa) {
       console.log("Respuesta directa:", directa);
-
-      return res.json({
-        respuesta: directa,
-      });
+      return res.json({ respuesta: directa });
     }
 
-    // IA
     const response = await openai.responses.create({
       model: "gpt-4.1-mini",
       temperature: 0.1,
       input: [
-        {
-          role: "system",
-          content: SYSTEM_PROMPT,
-        },
-        {
-          role: "user",
-          content: texto,
-        },
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: texto },
       ],
     });
 
     const respuestaIA = response.output_text || "";
-
     const respuestaFinal = agregarCierre(respuestaIA);
 
-    console.log("Respuesta IA:", respuestaFinal);
+    console.log("Respuesta enviada:", respuestaFinal);
 
-    return res.json({
-      respuesta: respuestaFinal,
-    });
-
+    return res.json({ respuesta: respuestaFinal });
   } catch (error) {
-
     console.error("Error en /mensaje:", error);
 
-    return res.json({
-      respuesta: cierrePago(),
-    });
+    return res.json({ respuesta: cierrePago() });
   }
 });
 
