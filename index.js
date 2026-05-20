@@ -4,6 +4,7 @@ const express = require("express");
 const OpenAI = require("openai");
 
 const app = express();
+
 app.use(express.json());
 
 const openai = new OpenAI({
@@ -13,41 +14,44 @@ const openai = new OpenAI({
 const PORT = process.env.PORT || 3000;
 
 const SYSTEM_PROMPT = `
-Eres Isabella Rojas ❤️, una asistente humana, cálida y cercana que responde dudas por WhatsApp sobre el libro digital "Cuando Dios Habla".
+Eres Isabella Rojas ❤️, una asistente humana, amable y cercana que responde dudas por WhatsApp sobre el libro digital "Cuando Dios Habla".
 
-Tu trabajo es responder la duda del usuario de forma breve, amable y clara.
+Tu trabajo es:
+1. Responder la duda exacta del usuario.
+2. Sonar cálida, espiritual y humana.
+3. Mantener respuestas cortas.
+4. Guiar suavemente al apoyo del proyecto.
 
 REGLAS IMPORTANTES:
-- No empieces con "Hola".
-- No hagas preguntas abiertas como "¿quieres saber más?", "¿te cuento más?" o "¿hay algo más?".
-- No des vueltas.
-- No seas insistente ni agresiva.
-- Primero responde exactamente la duda del usuario.
-- Después dirige suavemente al siguiente paso de apoyo.
-- La respuesta debe sonar humana, espiritual, sencilla y natural.
-- Mantén la respuesta corta, máximo 2 párrafos.
-- No inventes datos bancarios.
-- No digas que el libro es físico.
-- No digas que pertenece a una religión específica.
+- Nunca digas que eres IA.
+- Nunca hables como robot.
+- Nunca hagas preguntas abiertas como:
+  - "¿Quieres saber más?"
+  - "¿Te cuento más?"
+  - "¿Hay algo más?"
+- Nunca vendas agresivamente.
+- No des demasiada información.
+- Responde solamente lo necesario.
+- Máximo 2 párrafos.
+- Sonar natural y amorosa.
+- No uses respuestas largas.
 
-INFORMACIÓN DEL PRODUCTO:
+INFORMACIÓN DEL PROYECTO:
 - Es un libro digital en PDF.
-- Se entrega por WhatsApp o correo.
-- No hay envío físico.
 - Está basado en la Biblia.
-- No es católico ni de una religión específica.
-- Lo puede estudiar cualquier persona con la Biblia que tenga en casa.
-- Es una guía espiritual para estudiar los Salmos.
-
-APOYO:
-El libro se comparte como una bendición. Si la persona desea apoyar el proyecto, puede hacerlo por transferencia o depósito en Oxxo.
+- No pertenece a una religión específica.
+- No es exclusivamente católico.
+- Puede estudiarse con cualquier Biblia.
+- Se entrega digitalmente por WhatsApp o correo.
+- El proyecto busca fortalecer la espiritualidad y acercar a las personas a Dios.
 
 CIERRE OBLIGATORIO:
-Después de responder la duda, termina con una frase parecida a esta:
+Después de responder, SIEMPRE termina invitando amablemente al apoyo del proyecto mencionando:
+- transferencia
+- depósito en Oxxo
+- preguntar cuál método prefieren
 
-"Si deseas apoyar el proyecto, puedes hacerlo por transferencia o depósito en Oxxo. ¿Cuál método prefieres? 🙏"
-
-Nunca termines con otra pregunta abierta.
+Hazlo de forma cálida y natural.
 `;
 
 function normalizarTexto(texto) {
@@ -59,90 +63,88 @@ function normalizarTexto(texto) {
 }
 
 function limpiarRespuesta(respuesta) {
+
   let texto = String(respuesta || "").trim();
 
   texto = texto
-    .replace(/^¡?hola[!,. ]*/i, "")
-    .replace(/^buenos días[!,. ]*/i, "")
+    .replace(/^hola[!,. ]*/i, "")
     .replace(/^buenos dias[!,. ]*/i, "")
     .replace(/^buenas tardes[!,. ]*/i, "")
     .replace(/^buenas noches[!,. ]*/i, "")
-    .replace(/¿quieres que te cuente.*?\?/gi, "")
-    .replace(/¿quieres saber.*?\?/gi, "")
-    .replace(/¿hay algo más que quieras saber\?/gi, "")
-    .replace(/¿hay algo mas que quieras saber\?/gi, "")
-    .replace(/¿hay algo más en lo que pueda ayudarte\?/gi, "")
-    .replace(/¿hay algo mas en lo que pueda ayudarte\?/gi, "")
+    .replace(/¿quieres saber más\?/gi, "")
+    .replace(/¿quieres saber mas\?/gi, "")
+    .replace(/¿te cuento más\?/gi, "")
+    .replace(/¿te cuento mas\?/gi, "")
+    .replace(/¿hay algo más.*?\?/gi, "")
+    .replace(/¿hay algo mas.*?\?/gi, "")
     .trim();
 
   return texto;
 }
 
-function agregarCierreSiFalta(respuesta) {
-  const textoNormalizado = normalizarTexto(respuesta);
-
-  const mencionaMetodo =
-    textoNormalizado.includes("transferencia") ||
-    textoNormalizado.includes("oxxo");
-
-  if (mencionaMetodo) return respuesta;
+function agregarCierre(respuesta) {
 
   return `${respuesta}
 
-Si deseas apoyar el proyecto, puedes hacerlo por transferencia o depósito en Oxxo. ¿Cuál método prefieres? 🙏`;
+🙏 Si deseas apoyar este proyecto, puedes hacerlo por transferencia bancaria o depósito en Oxxo.
+
+¿Cuál método prefieres? ✨`;
 }
 
 function respuestaDirecta(textoNormalizado) {
+
+  // RELIGIÓN
   if (
     textoNormalizado.includes("catolico") ||
     textoNormalizado.includes("catolica") ||
     textoNormalizado.includes("religion") ||
     textoNormalizado.includes("religioso") ||
-    textoNormalizado.includes("cristiano") ||
-    textoNormalizado.includes("cristiana")
+    textoNormalizado.includes("cristiano")
   ) {
-    return `No es un libro católico como tal, ni pertenece a una religión específica 🌿✨
 
-Es una guía basada en la Biblia que cualquier persona puede estudiar con la Biblia que tenga en casa.
+    return agregarCierre(
+`No, no es un libro católico como tal 🌿
 
-Si deseas apoyar el proyecto, puedes hacerlo por transferencia o depósito en Oxxo. ¿Cuál método prefieres? 🙏`;
+Es una guía basada en la Biblia que puedes estudiar con cualquier Biblia que tengas en casa, sin importar tu creencia.
+
+Está pensado para acompañar y fortalecer la espiritualidad de forma sencilla y amorosa ❤️`
+    );
   }
 
+  // PDF / ENTREGA
   if (
-    textoNormalizado.includes("envio") ||
-    textoNormalizado.includes("enviar") ||
-    textoNormalizado.includes("envian") ||
-    textoNormalizado.includes("entrega") ||
-    textoNormalizado.includes("domicilio") ||
-    textoNormalizado.includes("fisico") ||
     textoNormalizado.includes("pdf") ||
-    textoNormalizado.includes("recibo") ||
-    textoNormalizado.includes("recibir") ||
-    textoNormalizado.includes("descargar")
+    textoNormalizado.includes("digital") ||
+    textoNormalizado.includes("fisico") ||
+    textoNormalizado.includes("envio") ||
+    textoNormalizado.includes("entrega") ||
+    textoNormalizado.includes("correo") ||
+    textoNormalizado.includes("whatsapp")
   ) {
-    return `El libro es digital en PDF, no es físico 😊
 
-Se entrega por WhatsApp o correo para que puedas descargarlo en tu teléfono o computadora.
+    return agregarCierre(
+`El material es completamente digital en PDF 😊
 
-Si deseas apoyar el proyecto, puedes hacerlo por transferencia o depósito en Oxxo. ¿Cuál método prefieres? 🙏`;
+Se entrega por WhatsApp o correo para que puedas leerlo fácilmente desde tu celular o computadora ✨`
+    );
   }
 
+  // PRECIO / APOYO
   if (
-    textoNormalizado.includes("cuanto") ||
-    textoNormalizado.includes("cuesta") ||
     textoNormalizado.includes("precio") ||
-    textoNormalizado.includes("vale") ||
+    textoNormalizado.includes("cuanto cuesta") ||
+    textoNormalizado.includes("cuanto") ||
     textoNormalizado.includes("costo") ||
+    textoNormalizado.includes("vale") ||
     textoNormalizado.includes("apoyo") ||
-    textoNormalizado.includes("apoyar") ||
-    textoNormalizado.includes("aportacion") ||
     textoNormalizado.includes("donacion")
   ) {
-    return `El libro se comparte como una bendición 🙏
 
-Si en tu corazón deseas apoyar el proyecto, puedes hacerlo con el monto que sientas correcto.
+    return agregarCierre(
+`El proyecto se comparte como una bendición 🙏
 
-Puedes apoyar por transferencia o depósito en Oxxo. ¿Cuál método prefieres? 🙏`;
+Si nace en tu corazón apoyar este trabajo espiritual, puedes hacerlo con el monto que sientas correcto ✨`
+    );
   }
 
   return null;
@@ -153,47 +155,72 @@ app.get("/", (req, res) => {
 });
 
 app.post("/mensaje", async (req, res) => {
+
   try {
-    const texto = req.body.texto || req.body.mensaje || "";
+
+    const texto =
+      req.body.texto ||
+      req.body.mensaje ||
+      "";
 
     console.log("Texto recibido:", texto);
 
     if (!texto) {
+
       return res.json({
-        respuesta: "Claro 🙏 Si deseas apoyar el proyecto, puedes hacerlo por transferencia o depósito en Oxxo. ¿Cuál método prefieres?"
+        respuesta: agregarCierre(
+          "Gracias por escribir 😊"
+        )
       });
     }
 
     const textoNormalizado = normalizarTexto(texto);
 
+    // RESPUESTAS DIRECTAS
     const directa = respuestaDirecta(textoNormalizado);
+
     if (directa) {
-      return res.json({ respuesta: directa });
+
+      return res.json({
+        respuesta: directa
+      });
     }
 
+    // OPENAI
     const response = await openai.responses.create({
       model: "gpt-4.1-mini",
       input: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: texto }
+        {
+          role: "system",
+          content: SYSTEM_PROMPT
+        },
+        {
+          role: "user",
+          content: texto
+        }
       ]
     });
 
-    let respuesta = limpiarRespuesta(response.output_text);
+    let respuesta = response.output_text || "";
 
-    if (!respuesta) {
-      respuesta = "Claro 🙏 Si deseas apoyar el proyecto, puedes hacerlo por transferencia o depósito en Oxxo. ¿Cuál método prefieres?";
-    }
+    respuesta = limpiarRespuesta(respuesta);
 
-    respuesta = agregarCierreSiFalta(respuesta);
+    respuesta = agregarCierre(respuesta);
 
-    return res.json({ respuesta });
-
-  } catch (error) {
-    console.error("Error en /mensaje:", error);
+    console.log("Respuesta enviada:", respuesta);
 
     return res.json({
-      respuesta: "Claro 🙏 Si deseas apoyar el proyecto, puedes hacerlo por transferencia o depósito en Oxxo. ¿Cuál método prefieres?"
+      respuesta
+    });
+
+  } catch (error) {
+
+    console.error("ERROR:", error);
+
+    return res.json({
+      respuesta: agregarCierre(
+        "Gracias por escribir 😊"
+      )
     });
   }
 });
