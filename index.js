@@ -23,7 +23,7 @@ const DATOS_PAGO = {
   clabe: "728969000160022558",
 
   aportes: {
-    gratitud: 70,
+    gratitud: 90,
     proyecto: 150,
     alcance: 200
   }
