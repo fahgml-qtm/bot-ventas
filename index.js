@@ -4,510 +4,408 @@ const express = require("express");
 const OpenAI = require("openai");
 
 const app = express();
-app.use(express.json());
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+app.use(express.json());
 
 const PORT = process.env.PORT || 8080;
 
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
+
 // ==========================================================
-// DATOS OFICIALES
+// INFORMACIÓN OFICIAL
 // ==========================================================
 
 const DATOS_PAGO = {
   banco: "Spin by OXXO",
   titular: "Francisco Camacho Sotelo",
   clabe: "728969000160022558",
-};
 
-const APORTACIONES = {
-  gratitud: 70,
-  proyecto: 150,
-  alcance: 200,
+  aportes: {
+    gratitud: 70,
+    proyecto: 150,
+    alcance: 200
+  }
 };
 
 // ==========================================================
-// PROMPT PRINCIPAL
+// PROMPT DEL AGENTE
 // ==========================================================
 
 const SYSTEM_PROMPT = `
-Eres Isabella Rojas ❤️, una asistente humana, cálida, espiritual y cercana que responde dudas por WhatsApp sobre el libro digital "Cuando Dios Habla".
+Eres Isabella Rojas, asistente de soporte del proyecto
+Cuando Dios Habla.
 
-Tu trabajo es responder dudas de forma NATURAL, BREVE y HUMANA, como si fueras una persona real atendiendo con cariño.
+Tu personalidad es amable, cálida, espiritual, paciente,
+respetuosa y humana.
 
-IMPORTANTE:
-- Nunca suenes robótica.
-- Nunca respondas exactamente igual cada vez.
-- Varía ligeramente las palabras y estructura.
-- Mantén respuestas cálidas y naturales.
-- No escribas demasiado.
-- Responde máximo en 1 o 2 párrafos cortos.
+Responde como una persona real por WhatsApp.
 
-REGLAS:
-- NO saludes.
-- NO uses "Hola".
-- NO hagas múltiples preguntas.
-- NO hagas preguntas abiertas innecesarias.
-- NO digas:
-  - "¿Quieres saber más?"
-  - "¿Te interesa?"
-  - "¿Te gustaría?"
-  - "¿Te ayudo en algo más?"
-  - "¿Quieres que te cuente?"
-- NO seas agresiva vendiendo.
-- NO presiones.
-- NO inventes información.
-- NO menciones correo electrónico.
-- NO digas que el libro es físico.
-- NO digas que existe una fecha límite para apoyar.
-- NO digas que la persona perderá el libro si paga después.
-- NO prometas validar manualmente un comprobante.
-- Si preguntan si pueden pagar después, responde que no hay problema.
-- Si preguntan por una cuenta bancaria o datos de transferencia, utiliza únicamente los datos oficiales incluidos en este prompt.
+REGLAS DE ESTILO:
 
-INFORMACIÓN REAL:
-- El libro es DIGITAL en PDF.
-- El libro NO es físico.
-- El PDF YA fue enviado anteriormente por WhatsApp.
-- El usuario lo puede encontrar más arriba en esta misma conversación.
-- El libro está basado en la Biblia.
-- No pertenece a una religión específica.
-- No es exclusivamente católico.
-- Puede estudiarse con cualquier Biblia.
+- Responde en español.
+- Utiliza párrafos cortos.
+- Deja una línea en blanco entre ideas.
+- Usa emojis cálidos con moderación.
+- Evita bloques largos de texto.
+- No repitas información innecesariamente.
+- No saludes nuevamente si la conversación ya comenzó.
+- No hagas preguntas innecesarias.
+- Responde directamente la duda del usuario.
+- No uses Markdown como encabezados con símbolos #.
+- No inventes enlaces, promociones, cuentas ni información.
+- No digas que eres una inteligencia artificial.
+- No presiones a la persona para pagar.
+- El apoyo es voluntario.
+- Nunca presentes el apoyo como una compra obligatoria.
 
-REFERENCIAS DE APOYO:
-- 70 MXN como gesto de gratitud.
-- 150 MXN para apoyar el proyecto.
-- 200 MXN para que este mensaje llegue a más personas.
+INFORMACIÓN OFICIAL DEL PROYECTO:
 
-DATOS OFICIALES PARA TRANSFERENCIA:
-- Banco: Spin by OXXO.
-- Titular: Francisco Camacho Sotelo.
-- CLABE: 728969000160022558.
+El material principal es un libro digital en formato PDF
+llamado "Cuando Dios Habla".
 
-IMPORTANTE SOBRE LOS MÉTODOS DE PAGO:
-- La transferencia bancaria utiliza los datos oficiales anteriores.
-- Para pagar mediante depósito en OXXO, la persona debe utilizar el código o QR que recibe dentro del flujo de OXXO en WhatsApp.
-- Nunca inventes un número, referencia o código de OXXO.
-- Después de realizar su apoyo, la persona debe enviar la imagen de su comprobante por WhatsApp.
+El PDF ya fue enviado previamente dentro de la conversación
+de WhatsApp.
 
-OBJETIVO:
-Después de resolver la duda de forma amable y humana, puedes dirigir suavemente a la persona al apoyo del proyecto espiritual mediante:
-- transferencia bancaria
-- depósito en OXXO
+El contenido es bíblico y no pertenece exclusivamente a una
+religión o denominación.
 
-Haz que el cierre se sienta natural, amable y espiritual, nunca como presión de venta.
+Los montos de apoyo sugeridos son:
+
+- $70 MXN como muestra de gratitud.
+- $150 MXN para apoyar el proyecto.
+- $200 MXN para ayudarnos a llegar a más personas.
+
+La persona puede realizar su apoyo por:
+
+- Transferencia bancaria.
+- Depósito en OXXO.
+
+DATOS PARA TRANSFERENCIA:
+
+Banco: Spin by OXXO
+Titular: Francisco Camacho Sotelo
+CLABE: 728969000160022558
+
+Después de realizar el apoyo, la persona debe enviar en este
+mismo chat la imagen de su comprobante.
+
+El apoyo puede hacerse después, mañana o cuando la persona
+tenga oportunidad. No existe ningún problema por esperar.
+
+Cuando respondas una pregunta concreta, no repitas todo el
+discurso de venta. Contesta únicamente lo necesario de manera
+clara, amable, ordenada y visual.
 `;
 
 // ==========================================================
 // FUNCIONES GENERALES
 // ==========================================================
 
-function normalizarTexto(texto) {
-  return String(texto || "")
-    .toLowerCase()
+function normalizarTexto(valor) {
+  return String(valor ?? "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[¿?¡!.,;:]/g, " ")
+    .toLowerCase()
+    .replace(/[¿?¡!.,;:()[\]{}"']/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
 
-function elegirAleatoria(opciones) {
-  return opciones[Math.floor(Math.random() * opciones.length)];
+function contieneAlguna(texto, frases) {
+  return frases.some((frase) => texto.includes(frase));
 }
 
-function limpiarRespuesta(texto) {
-  texto = String(texto || "").trim();
+function elegirAleatoria(opciones) {
+  return opciones[
+    Math.floor(Math.random() * opciones.length)
+  ];
+}
 
-  texto = texto
-    .replace(
-      /^¡?\s*hola\s*[😊🙏❤️✨🌿,\.\!]*\s*/gi,
-      ""
-    )
-    .replace(
-      /^gracias por preguntar\s*[😊🙏❤️✨🌿,\.\!]*\s*/gi,
-      ""
-    )
-    .replace(
-      /^buenos días\s*[😊🙏❤️✨🌿,\.\!]*\s*/gi,
-      ""
-    )
-    .replace(
-      /^buenos dias\s*[😊🙏❤️✨🌿,\.\!]*\s*/gi,
-      ""
-    )
-    .replace(
-      /^buenas tardes\s*[😊🙏❤️✨🌿,\.\!]*\s*/gi,
-      ""
-    )
-    .replace(
-      /^buenas noches\s*[😊🙏❤️✨🌿,\.\!]*\s*/gi,
-      ""
-    );
-
-  texto = texto
-    .replace(
-      /¿[^?]*(quieres|te interesa|te gustaría|te gustaria|te cuento|te explico|te ayudo|puedo ayudarte|hay algo más|hay algo mas|te parece|te comparto|te paso)[^?]*\?/gi,
-      ""
-    )
-    .replace(/\s{2,}/g, " ")
+function limpiarRespuesta(valor) {
+  return String(valor ?? "")
+    .replace(/\r\n/g, "\n")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n[ \t]+/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
-
-  return texto;
-}
-
-function contieneAlguna(texto, expresiones) {
-  return expresiones.some((expresion) =>
-    texto.includes(expresion)
-  );
 }
 
 // ==========================================================
-// CIERRE GENERAL DE PAGO
+// MENSAJES REUTILIZABLES
 // ==========================================================
 
 function cierrePago() {
-  const cierres = [
-    `💌 Puedes apoyar este proyecto espiritual por transferencia bancaria o depósito en OXXO ✨
-
-¿Cuál método prefieres? 🙏`,
-
-    `💌 Si deseas apoyar este proyecto espiritual, puedes hacerlo por transferencia bancaria o depósito en OXXO ✨
-
-¿Qué método prefieres? 🙏`,
-
-    `💌 Para apoyar este proyecto espiritual puedes elegir transferencia bancaria o depósito en OXXO ✨
-
-¿Cuál opción prefieres? 🙏`,
-  ];
-
-  return elegirAleatoria(cierres);
+  return [
+    "💌 Para apoyar este proyecto espiritual puedes elegir:",
+    "",
+    "🏦 Transferencia bancaria",
+    "🏪 Depósito en OXXO",
+    "",
+    "¿Cuál opción prefieres? 🙏"
+  ].join("\n");
 }
 
-function agregarCierre(texto) {
-  const limpio = limpiarRespuesta(texto);
+function agregarCierre(respuesta) {
+  const respuestaLimpia = limpiarRespuesta(respuesta);
 
-  if (!limpio) {
+  if (!respuestaLimpia) {
     return cierrePago();
   }
 
-  return `${limpio}
+  const normalizada =
+    normalizarTexto(respuestaLimpia);
 
-${cierrePago()}`;
+  const yaIncluyeCierre =
+    normalizada.includes("cual opcion prefieres") ||
+    (
+      normalizada.includes("transferencia bancaria") &&
+      normalizada.includes("deposito en oxxo")
+    );
+
+  if (yaIncluyeCierre) {
+    return respuestaLimpia;
+  }
+
+  return `${respuestaLimpia}\n\n${cierrePago()}`;
 }
 
-// ==========================================================
-// RESPUESTAS: PAGAR DESPUÉS
-// ==========================================================
-
-function esPreguntaPagoPosterior(texto) {
-  const expresiones = [
-    "puedo pagar despues",
-    "puedo hacerlo despues",
-    "puedo apoyar despues",
-    "puedo depositar despues",
-    "puedo transferir despues",
-    "puedo pagar luego",
-    "puedo hacerlo luego",
-    "puedo apoyar luego",
-    "puedo depositar luego",
-    "puedo transferir luego",
-    "pago despues",
-    "pago luego",
-    "pago mas tarde",
-    "lo pago despues",
-    "lo pago luego",
-    "lo pago mas tarde",
-    "mañana pago",
-    "mañana lo pago",
-    "mañana deposito",
-    "mañana transfiero",
-    "despues deposito",
-    "despues transfiero",
-    "ahorita no puedo pagar",
-    "ahora no puedo pagar",
-    "no puedo pagar ahorita",
-    "no puedo pagar ahora",
-    "no tengo dinero ahorita",
-    "no tengo dinero ahora",
-    "cuando tenga dinero",
-    "hasta cuando puedo pagar",
-    "hay fecha limite",
-    "tengo que pagar hoy",
-  ];
-
-  return contieneAlguna(texto, expresiones);
+function respuestaCuenta() {
+  return [
+    "Claro 😊 Estos son los datos para realizar tu apoyo por transferencia:",
+    "",
+    `🏦 Banco: ${DATOS_PAGO.banco}`,
+    `👤 Titular: ${DATOS_PAGO.titular}`,
+    `🔢 CLABE: ${DATOS_PAGO.clabe}`,
+    "",
+    "Cuando realices tu apoyo, envíame aquí la imagen del comprobante y con mucho gusto te entregaré tus regalos 🎁🙏"
+  ].join("\n");
 }
 
 function respuestaPagoPosterior() {
-  const respuestas = [
-    `Claro 😊 No hay problema, puedes realizar tu apoyo después.
-
-El material seguirá disponible aquí y, cuando tengas tu comprobante, puedes enviármelo como imagen para recibir también tus regalos 🎁`,
-
-    `Está bien 😊 Puedes realizar tu apoyo más adelante.
-
-Cuando lo hagas, envíame aquí la imagen de tu comprobante y con mucho gusto te entregaré tus regalos 🎁`,
-
-    `No hay problema 🙏 Puedes hacerlo cuando te sea posible.
-
-Cuando tengas el comprobante, envíamelo aquí como imagen para que podamos entregarte también tus regalos 🎁`,
-  ];
-
-  return elegirAleatoria(respuestas);
+  return [
+    "Claro 😊 No hay ningún problema, puedes realizar tu apoyo después.",
+    "",
+    "Cuando estés listo, estos son los datos para transferencia:",
+    "",
+    `🏦 Banco: ${DATOS_PAGO.banco}`,
+    `👤 Titular: ${DATOS_PAGO.titular}`,
+    `🔢 CLABE: ${DATOS_PAGO.clabe}`,
+    "",
+    "Después solo envíame aquí la imagen del comprobante para entregarte tus regalos 🎁",
+    "",
+    "Que Dios te bendiga 🙏❤️"
+  ].join("\n");
 }
 
-// ==========================================================
-// RESPUESTAS: DATOS DE TRANSFERENCIA
-// ==========================================================
-
-function solicitaDatosTransferencia(texto) {
-  const expresiones = [
-    "numero de cuenta",
-    "numero para depositar",
-    "numero para transferencia",
-    "numero para transferir",
-    "cuenta bancaria",
-    "cuenta para depositar",
-    "cuenta para transferencia",
-    "cuenta para transferir",
-    "datos bancarios",
-    "datos de banco",
-    "datos de la cuenta",
-    "datos de transferencia",
-    "datos para transferir",
-    "datos para depositar",
-    "cual es la cuenta",
-    "cual cuenta",
-    "a que cuenta",
-    "en que cuenta",
-    "donde transfiero",
-    "donde deposito",
-    "donde hago la transferencia",
-    "como transfiero",
-    "como hago transferencia",
-    "como hago la transferencia",
-    "quiero transferir",
-    "quiero hacer transferencia",
-    "quiero pagar por transferencia",
-    "pagar con transferencia",
-    "pago por transferencia",
-    "pasame la cuenta",
-    "dame la cuenta",
-    "comparteme la cuenta",
-    "mandame la cuenta",
-    "cual es la clabe",
-    "pasame la clabe",
-    "dame la clabe",
-    "comparteme la clabe",
-    "mandame la clabe",
-    "clabe interbancaria",
-    "clabe",
-    "transferencia bancaria",
-  ];
-
-  return contieneAlguna(texto, expresiones);
+function respuestaOxxo() {
+  return [
+    "Claro 😊 También puedes realizar tu apoyo mediante depósito en OXXO.",
+    "",
+    "Utiliza el código o QR de Spin que te compartimos anteriormente en esta conversación 🏪",
+    "",
+    "Cuando termines, envíame aquí una fotografía completa y legible del ticket para poder entregarte tus regalos 🎁🙏"
+  ].join("\n");
 }
 
-function respuestaDatosTransferencia() {
-  const introducciones = [
-    "Claro 😊 Puedes realizar tu transferencia con estos datos:",
-    "Por supuesto 🙏 Estos son los datos para realizar tu transferencia:",
-    "Claro, te comparto los datos de transferencia 😊",
-  ];
-
-  return `${elegirAleatoria(introducciones)}
-
-🏦 Banco: ${DATOS_PAGO.banco}
-👤 Titular: ${DATOS_PAGO.titular}
-💳 CLABE: ${DATOS_PAGO.clabe}
-
-Cuando la realices, envíame aquí la imagen de tu comprobante para poder entregarte tus regalos 🎁`;
+function respuestaReligion() {
+  return [
+    "El contenido está basado en la Biblia 🙏📖",
+    "",
+    "No pertenece exclusivamente a una religión o denominación. Fue preparado para cualquier persona que quiera acercarse más a Dios y profundizar en Su Palabra ❤️"
+  ].join("\n");
 }
 
-// ==========================================================
-// RESPUESTAS: DEPÓSITO EN OXXO
-// ==========================================================
-
-function solicitaPagoOxxo(texto) {
-  const expresiones = [
-    "deposito en oxxo",
-    "depositar en oxxo",
-    "pagar en oxxo",
-    "pago en oxxo",
-    "quiero pagar en oxxo",
-    "quiero depositar en oxxo",
-    "como pago en oxxo",
-    "como deposito en oxxo",
-    "datos de oxxo",
-    "codigo de oxxo",
-    "codigo para oxxo",
-    "qr de oxxo",
-    "qr para oxxo",
-    "referencia de oxxo",
-    "numero de oxxo",
-    "oxxo",
-  ];
-
-  return contieneAlguna(texto, expresiones);
+function respuestaEntrega() {
+  return [
+    "El libro es completamente digital y se entrega en formato PDF 📖✨",
+    "",
+    "Ya fue enviado anteriormente en esta misma conversación. Puedes buscarlo un poco más arriba en el chat y descargarlo directamente en tu teléfono 📲"
+  ].join("\n");
 }
 
-function respuestaPagoOxxo() {
-  const respuestas = [
-    `Claro 😊 Puedes realizar tu apoyo mediante depósito en OXXO.
-
-En esta conversación recibirás el código con los datos que debes presentar en caja. Después, envíame aquí la imagen de tu comprobante para entregarte tus regalos 🎁`,
-
-    `Por supuesto 🙏 Para realizar el depósito en OXXO utiliza el código que te mostramos en esta conversación.
-
-Cuando termines, envíame aquí la foto del ticket para poder entregarte tus regalos 🎁`,
-
-    `Claro 😊 El depósito en OXXO se realiza presentando en caja el código que aparece en esta conversación.
-
-Después del depósito, envíame aquí la imagen del ticket y con mucho gusto te entregaré tus regalos 🎁`,
-  ];
-
-  return elegirAleatoria(respuestas);
+function respuestaPrecio() {
+  return [
+    "El libro digital ya fue entregado y el apoyo al proyecto es completamente voluntario 🙏",
+    "",
+    "Puedes elegir la cantidad con la que te sientas cómodo:",
+    "",
+    `💛 $${DATOS_PAGO.aportes.gratitud} MXN como muestra de gratitud`,
+    `🌱 $${DATOS_PAGO.aportes.proyecto} MXN para apoyar el proyecto`,
+    `✨ $${DATOS_PAGO.aportes.alcance} MXN para ayudarnos a llegar a más personas`,
+    "",
+    cierrePago()
+  ].join("\n");
 }
 
 // ==========================================================
 // RESPUESTAS DIRECTAS
 // ==========================================================
 
-function respuestaDirecta(textoNormalizado) {
-  // 1. Preguntas sobre pagar después.
-  // Debe evaluarse antes de la condición general de pago.
-  if (esPreguntaPagoPosterior(textoNormalizado)) {
+function respuestaDirecta(mensajeOriginal) {
+  const texto =
+    normalizarTexto(mensajeOriginal);
+
+  if (!texto) {
+    return null;
+  }
+
+  // --------------------------------------------------------
+  // PAGAR DESPUÉS
+  // Debe evaluarse antes de la intención genérica de pago.
+  // --------------------------------------------------------
+
+  const preguntaPagoPosterior =
+    contieneAlguna(texto, [
+      "pagar despues",
+      "pago despues",
+      "depositar despues",
+      "transferir despues",
+      "hacerlo despues",
+      "puedo hacerlo despues",
+      "puedo pagar manana",
+      "pagar manana",
+      "pago manana",
+      "depositar manana",
+      "transferir manana",
+      "lo hago manana",
+      "mas tarde",
+      "otro dia",
+      "la proxima semana",
+      "cuando tenga dinero"
+    ]) ||
+    texto === "despues" ||
+    texto === "manana";
+
+  if (preguntaPagoPosterior) {
     return respuestaPagoPosterior();
   }
 
-  // 2. Solicitudes específicas de transferencia.
-  if (solicitaDatosTransferencia(textoNormalizado)) {
-    return respuestaDatosTransferencia();
+  // --------------------------------------------------------
+  // DATOS BANCARIOS
+  // --------------------------------------------------------
+
+  const preguntaCuenta =
+    contieneAlguna(texto, [
+      "numero de cuenta",
+      "numero para depositar",
+      "numero para transferir",
+      "datos bancarios",
+      "datos de transferencia",
+      "cuenta bancaria",
+      "a que cuenta",
+      "en que cuenta",
+      "donde transfiero",
+      "donde deposito",
+      "cual es la cuenta",
+      "cual cuenta",
+      "pasame la cuenta",
+      "mandame la cuenta",
+      "clave interbancaria"
+    ]) ||
+    texto === "cuenta" ||
+    texto === "clabe";
+
+  if (preguntaCuenta) {
+    return respuestaCuenta();
   }
 
-  // 3. Solicitudes específicas de OXXO.
-  if (solicitaPagoOxxo(textoNormalizado)) {
-    return respuestaPagoOxxo();
+  // --------------------------------------------------------
+  // OXXO
+  // --------------------------------------------------------
+
+  const preguntaOxxo =
+    contieneAlguna(texto, [
+      "deposito en oxxo",
+      "depositar en oxxo",
+      "pagar en oxxo",
+      "pago en oxxo",
+      "como pago en oxxo",
+      "como deposito en oxxo",
+      "codigo de oxxo",
+      "qr de oxxo",
+      "ticket de oxxo"
+    ]) ||
+    texto === "oxxo";
+
+  if (preguntaOxxo) {
+    return respuestaOxxo();
   }
 
-  // 4. Preguntas sobre religión.
+  // --------------------------------------------------------
+  // RELIGIÓN
+  // --------------------------------------------------------
+
   if (
-    contieneAlguna(textoNormalizado, [
+    contieneAlguna(texto, [
       "catolico",
       "catolica",
+      "cristiano",
+      "cristiana",
       "religion",
       "religioso",
       "religiosa",
-      "cristiano",
-      "cristiana",
+      "evangelico",
+      "evangelica",
+      "denominacion",
+      "de que iglesia"
     ])
   ) {
-    const respuestasReligion = [
-      `No es un libro católico como tal, ni pertenece a una religión específica 🌿
-
-Es una guía basada en la Biblia que puedes estudiar con cualquier Biblia que tengas en casa.`,
-
-      `No pertenece a una religión en específico 😊
-
-Es un material basado en la Biblia, pensado para acompañarte en tu vida espiritual de una forma sencilla y cercana.`,
-
-      `Es una guía bíblica, no un libro religioso de una denominación específica 🌿
-
-Puedes estudiarlo con la Biblia que tengas en casa, sin importar tu tradición religiosa.`,
-    ];
-
-    return agregarCierre(
-      elegirAleatoria(respuestasReligion)
-    );
+    return respuestaReligion();
   }
 
-  // 5. Preguntas sobre entrega, formato o descarga.
+  // --------------------------------------------------------
+  // ENTREGA, PDF O PRODUCTO FÍSICO
+  // --------------------------------------------------------
+
   if (
-    contieneAlguna(textoNormalizado, [
+    contieneAlguna(texto, [
+      "es fisico",
+      "libro fisico",
+      "producto fisico",
+      "formato fisico",
+      "es digital",
+      "libro digital",
+      "es pdf",
+      "archivo pdf",
+      "como lo recibo",
+      "cuando lo recibo",
+      "donde lo recibo",
+      "como se entrega",
+      "donde esta el libro",
+      "no encuentro el libro",
+      "no me llego",
+      "no lo recibi",
       "envio",
-      "enviar",
-      "entrega",
-      "fisico",
-      "pdf",
-      "digital",
-      "descargar",
-      "recibir",
-      "recibo",
-      "archivo",
-      "entrego",
-      "llega",
+      "domicilio"
     ])
   ) {
-    const respuestasEnvio = [
-      `El libro es completamente digital 😊
-
-El PDF ya fue enviado anteriormente aquí mismo en WhatsApp, así que solo necesitas abrirlo o descargarlo desde esta conversación 🌿`,
-
-      `No es un libro físico 🙏
-
-Es un material digital en PDF que ya te compartimos anteriormente en esta misma conversación de WhatsApp para que puedas leerlo cuando quieras ✨`,
-
-      `El material ya fue enviado por WhatsApp 😊
-
-Lo encuentras más arriba en esta conversación. Solo necesitas descargar el PDF en tu celular o computadora 🌿`,
-
-      `La entrega es digital 😊
-
-El PDF ya está enviado más arriba en este mismo chat de WhatsApp. No llega nada físico ni se manda por correo; solo debes descargarlo desde aquí mismo 🌿`,
-    ];
-
-    return agregarCierre(
-      elegirAleatoria(respuestasEnvio)
-    );
+    return respuestaEntrega();
   }
 
-  // 6. Preguntas generales sobre precio o aportación.
+  // --------------------------------------------------------
+  // PRECIO O MONTO
+  // --------------------------------------------------------
+
   if (
-    contieneAlguna(textoNormalizado, [
-      "cuanto",
-      "cuesta",
+    contieneAlguna(texto, [
+      "cuanto cuesta",
+      "cuanto vale",
+      "que precio",
       "precio",
       "costo",
-      "vale",
-      "apoyo",
-      "apoyar",
-      "aportacion",
-      "donacion",
-      "pagar",
-      "pago",
+      "cuanto pago",
+      "cuanto deposito",
+      "cuanto transfiero",
+      "cuanto hay que dar",
+      "cuanto debo pagar",
+      "de cuanto es el apoyo",
+      "cantidad"
     ])
   ) {
-    const respuestasPago = [
-      `El libro se comparte como una bendición 🙏
-
-Si nace en tu corazón apoyar este proyecto espiritual, las referencias son:
-🌿 ${APORTACIONES.gratitud} MXN como gesto de gratitud
-🌿 ${APORTACIONES.proyecto} MXN para apoyar el proyecto
-🌿 ${APORTACIONES.alcance} MXN para que este mensaje llegue a más personas`,
-
-      `El material ya fue compartido con mucho cariño 😊
-
-Para apoyar el proyecto, puedes elegir una de estas referencias:
-🌿 ${APORTACIONES.gratitud} MXN como gesto de gratitud
-🌿 ${APORTACIONES.proyecto} MXN para apoyar el proyecto
-🌿 ${APORTACIONES.alcance} MXN para ayudar a que llegue a más personas`,
-
-      `Este proyecto se sostiene con el apoyo de las personas que reciben el material 🙏
-
-Puedes apoyar con:
-🌿 ${APORTACIONES.gratitud} MXN como gesto de gratitud
-🌿 ${APORTACIONES.proyecto} MXN para apoyar directamente el proyecto
-🌿 ${APORTACIONES.alcance} MXN para que este mensaje llegue a más personas`,
-    ];
-
-    return agregarCierre(
-      elegirAleatoria(respuestasPago)
-    );
+    return respuestaPrecio();
   }
 
   return null;
@@ -518,56 +416,80 @@ Puedes apoyar con:
 // ==========================================================
 
 app.get("/", (req, res) => {
-  res.send("Bot ventas activo ✅");
+  return res
+    .status(200)
+    .send("Bot ventas activo ✅");
 });
 
 app.post("/mensaje", async (req, res) => {
   try {
-    const texto =
-      req.body.texto ||
-      req.body.mensaje ||
-      req.body.message ||
+    const mensaje =
+      req.body?.texto ??
+      req.body?.mensaje ??
+      req.body?.message ??
       "";
 
-    console.log("Texto recibido:", texto);
+    const textoUsuario =
+      String(mensaje).trim();
 
-    if (!texto) {
+    console.log(
+      "Mensaje recibido:",
+      textoUsuario
+    );
+
+    if (!textoUsuario) {
       return res.json({
-        respuesta: cierrePago(),
+        respuesta: [
+          "Estoy aquí para ayudarte 😊",
+          "",
+          "Puedes escribirme tu duda sobre el libro, la entrega o las formas de apoyo 🙏"
+        ].join("\n")
       });
     }
 
-    const textoNormalizado =
-      normalizarTexto(texto);
-
     const directa =
-      respuestaDirecta(textoNormalizado);
+      respuestaDirecta(textoUsuario);
 
     if (directa) {
+      const respuestaFinal =
+        limpiarRespuesta(directa);
+
       console.log(
-        "Respuesta directa:",
-        directa
+        "Respuesta directa enviada:",
+        respuestaFinal
       );
 
       return res.json({
-        respuesta: directa,
+        respuesta: respuestaFinal
       });
     }
 
     const response =
       await openai.responses.create({
         model: "gpt-4.1-mini",
+
         temperature: 0.4,
+
         input: [
           {
             role: "system",
-            content: SYSTEM_PROMPT,
+            content: [
+              {
+                type: "input_text",
+                text: SYSTEM_PROMPT
+              }
+            ]
           },
           {
             role: "user",
-            content: texto,
-          },
-        ],
+            content: [
+              {
+                type: "input_text",
+                text: textoUsuario
+              }
+            ]
+          }
+        ]
       });
 
     const respuestaIA =
@@ -582,7 +504,7 @@ app.post("/mensaje", async (req, res) => {
     );
 
     return res.json({
-      respuesta: respuestaFinal,
+      respuesta: respuestaFinal
     });
   } catch (error) {
     console.error(
@@ -591,7 +513,11 @@ app.post("/mensaje", async (req, res) => {
     );
 
     return res.json({
-      respuesta: cierrePago(),
+      respuesta: [
+        "Con mucho gusto te ayudo 😊",
+        "",
+        cierrePago()
+      ].join("\n")
     });
   }
 });
